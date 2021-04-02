@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -9,10 +11,16 @@ var FaviconHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 	return
 })
 
-var IndexHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello from INDEX")
-	return
-})
+func IndexHandler(t *template.Template) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Our middleware logic goes here...
+		err := t.ExecuteTemplate(w, "index", nil)
+		if err != nil {
+			log.Printf("index handler, error: %v\n", err)
+			http.Redirect(w, r, "/error/500", http.StatusInternalServerError)
+		}
+	})
+}
 
 var LoginHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello from LOGIN")

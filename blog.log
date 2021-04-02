@@ -1,1 +1,28 @@
 ERROR: 2021/04/02 15:41:12 main.go:44: listen tcp: address 9090: missing port in address
+ERROR: 2021/04/02 17:51:16 main.go:46: listen tcp: address 9090: missing port in address
+INFO: 2021/04/02 18:02:24 middleware.go:31: (CheckGet) GET /
+INFO: 2021/04/02 18:02:25 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:03:08 middleware.go:31: (CheckGet) GET /static/
+INFO: 2021/04/02 18:03:08 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:03:11 middleware.go:31: (CheckGet) GET /static
+INFO: 2021/04/02 18:03:11 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:03:16 middleware.go:59: (CheckGetOfPost) GET /login
+INFO: 2021/04/02 18:03:16 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:03:21 middleware.go:31: (CheckGet) GET /logout
+INFO: 2021/04/02 18:03:22 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:03:26 middleware.go:31: (CheckGet) GET /home
+INFO: 2021/04/02 18:03:27 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:03:34 middleware.go:59: (CheckGetOfPost) GET /error/
+INFO: 2021/04/02 18:03:34 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:03:36 middleware.go:59: (CheckGetOfPost) GET /error/
+INFO: 2021/04/02 18:03:37 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:03:39 middleware.go:59: (CheckGetOfPost) GET /error/foo
+INFO: 2021/04/02 18:03:39 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:12:10 middleware.go:59: (CheckGetOfPost) GET /error/foo
+INFO: 2021/04/02 18:12:11 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:12:13 middleware.go:31: (CheckGet) GET /
+INFO: 2021/04/02 18:12:13 middleware.go:59: (CheckGetOfPost) GET /favicon.ico
+INFO: 2021/04/02 18:43:34 middleware.go:31: GET /
+INFO: 2021/04/02 18:43:34 middleware.go:59: GET /favicon.ico
+INFO: 2021/04/02 18:52:19 middleware.go:31: GET /
+INFO: 2021/04/02 18:52:19 middleware.go:59: GET /favicon.ico

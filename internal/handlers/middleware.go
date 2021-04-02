@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/scottcagno/go-blog/internal/logging"
+	"github.com/scottcagno/go-blog/pkg/logging"
 	"net/http"
 )
 
@@ -14,7 +14,7 @@ func ExampleMiddleware(next http.Handler) http.Handler {
 
 func WithLog(logger *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Info.Printf("%s (%s) -> %s\n", r.Method, r.Response.Status, r.URL.Path)
+		logger.Info.Printf("(%s) %s %s\n", "WithLog", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -28,7 +28,7 @@ func CheckGet(logger *logging.Logger, next http.Handler) http.Handler {
 			logger.Error.Printf("%s %s -> %d %s\n", r.Method, r.URL.Path, code, mesg)
 			return
 		}
-		logger.Info.Printf("%s (%s) -> %s\n", r.Method, r.Response.Status, r.URL.Path)
+		logger.Info.Printf("%s %s\n", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -42,7 +42,7 @@ func CheckPost(logger *logging.Logger, next http.Handler) http.Handler {
 			logger.Error.Printf("%s %s -> %d %s\n", r.Method, r.URL.Path, code, mesg)
 			return
 		}
-		logger.Info.Printf("%s (%s) -> %s\n", r.Method, r.Response.Status, r.URL.Path)
+		logger.Info.Printf("%s %s\n", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -56,7 +56,7 @@ func CheckGetOrPost(logger *logging.Logger, next http.Handler) http.Handler {
 			logger.Error.Printf("%s %s -> %d %s\n", r.Method, r.URL.Path, code, mesg)
 			return
 		}
-		logger.Info.Printf("%s (%s) -> %s\n", r.Method, r.Response.Status, r.URL.Path)
+		logger.Info.Printf("%s %s\n", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
 	})
 }
