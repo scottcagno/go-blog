@@ -2,8 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"html/template"
-	"log"
+	"github.com/scottcagno/go-blog/pkg/templates"
 	"net/http"
 )
 
@@ -11,14 +10,10 @@ var FaviconHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 	return
 })
 
-func IndexHandler(t *template.Template) http.Handler {
+func IndexHandler(t *templates.TemplateCache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Our middleware logic goes here...
-		err := t.ExecuteTemplate(w, "index.html", nil)
-		if err != nil {
-			log.Printf("index handler, error: %v\n", err)
-			http.Redirect(w, r, "/error/500", http.StatusInternalServerError)
-		}
+		t.Render(w, r, "index.html", nil)
 	})
 }
 

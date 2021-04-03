@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"io"
 	"log"
 	"os"
 )
@@ -19,14 +20,21 @@ func NewStdoutLogger() *Logger {
 	}
 }
 
-func NewFileLogger() *Logger {
-	fd, err := os.OpenFile("logger.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+func NewLogFile(name string) *os.File {
+	fd, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return fd
+}
+
+func NewLogger(w io.Writer) *Logger {
+	if w == nil {
+		w = NewLogFile("webserver.log")
+	}
 	return &Logger{
-		Warn:  log.New(fd, "WARN: ", log.Ldate|log.Ltime|log.Lshortfile),
-		Info:  log.New(fd, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile),
-		Error: log.New(fd, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile),
+		Warn:  log.New(w, "WARN: ", log.Ldate|log.Ltime|log.Lshortfile),
+		Info:  log.New(w, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile),
+		Error: log.New(w, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile),
 	}
 }
