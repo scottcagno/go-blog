@@ -14,7 +14,7 @@ var FaviconHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 func IndexHandler(t *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Our middleware logic goes here...
-		err := t.ExecuteTemplate(w, "index", nil)
+		err := t.ExecuteTemplate(w, "index.html", nil)
 		if err != nil {
 			log.Printf("index handler, error: %v\n", err)
 			http.Redirect(w, r, "/error/500", http.StatusInternalServerError)

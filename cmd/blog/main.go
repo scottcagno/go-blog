@@ -22,9 +22,7 @@ var (
 
 func init() {
 	funcMap := template.FuncMap{}
-
-	base := template.Must(template.ParseFiles("web/templates/base.html"))
-	templates = template.Must(base.Funcs(funcMap).ParseGlob("web/templates/*.html"))
+	templates = template.Must(template.New("*").Funcs(funcMap).ParseGlob("web/templates/*.html"))
 	func() {
 		if _, err := os.Stat(STATIC_PATH); os.IsNotExist(err) {
 			if err := os.MkdirAll(STATIC_PATH, 0655); err != nil {
