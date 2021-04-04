@@ -1,24 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <link rel="shortcut icon" href="/static/img/favicon.ico" type="image/x-icon">
-    <link rel="icon" href="/static/img/favicon.ico" type="image/x-icon">
-    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/css/custom.css" rel="stylesheet">
-    <title>Index</title>
+    {{ template "header.stub.html" }}
+    <title>Blog | Index</title>
 </head>
 <body>
 <div class="content">
     <div class="container">
         <h1>Index</h1>
-        <p>This is the index template</p>
+        <p>This is the index page</p>
+        <hr>
+        {{ template "links.stub.html" }}
     </div>
 </div>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
-<script src="/static/js/global.js"></script>
-{{ template "footer.html" }}
+{{ template "scripts.stub.html" }}
+{{ template "footer.stub.html" }}
 </body>
 </html>

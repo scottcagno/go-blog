@@ -1,18 +1,19 @@
-{{ define "title" }}
-<!-- page title goes here -->
-User
-{{ end }}
-
-{{ define "head" }}
-<!-- other header information goes here -->
-{{ end }}
-
-{{ define "body" }}
-<!-- main body of page goes here -->
-<h1>User</h1>
-<p>This is the user page</p>
-{{ end }}
-
-{{ define "script" }}
-<!-- any page specific js goes here -->
-{{ end }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{ template "header.stub.html" }}
+    <title>Blog | User</title>
+</head>
+<body>
+<div class="content">
+    <div class="container">
+        <h1>User</h1>
+        <p>This is the user page</p>
+        <hr>
+        {{ template "links.stub.html" }}
+    </div>
+</div>
+{{ template "scripts.stub.html" }}
+{{ template "footer.stub.html" }}
+</body>
+</html>

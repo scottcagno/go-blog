@@ -99,6 +99,7 @@ type TemplateCache struct {
 	cache *template.Template
 	logr  *logging.Logger
 	buff  sync.Pool
+	ct    map[int]string
 	sync.RWMutex
 }
 
@@ -112,13 +113,16 @@ func NewTemplateCache(pattern string, logger *logging.Logger) *TemplateCache {
 				return new(bytes.Buffer)
 			},
 		},
+		ct: contentType,
 	}
 }
 
 func (t *TemplateCache) Render(w http.ResponseWriter, r *http.Request, tmpl string, data interface{}) {
+	t.Lock()
+	defer t.Unlock()
 	buffer := t.buff.Get().(*bytes.Buffer)
 	buffer.Reset()
-	err := t.cache.ExecuteTemplate(buffer, tmpl, data)
+	err := t.cache.ExecuteTemplate(buffer, tmpl, map[string]interface{}{"title": tmpl, "data": data})
 	if err != nil {
 		t.buff.Put(buffer)
 		t.logr.Error.Printf("Error while executing template (%s): %v\n", tmpl, err)
@@ -134,19 +138,24 @@ func (t *TemplateCache) Render(w http.ResponseWriter, r *http.Request, tmpl stri
 }
 
 func (t *TemplateCache) Raw(w http.ResponseWriter, format string, data ...interface{}) {
+	t.Lock()
+	defer t.Unlock()
 	_, err := fmt.Fprintf(w, format, data...)
 	if err != nil {
 		t.logr.Error.Printf("Error while writing (Raw) to ResponseWriter: %v\n", err)
+		return
 	}
 	return
 }
 
 func (t *TemplateCache) ContentType(w http.ResponseWriter, content int) {
-	t.RLock()
+	t.Lock()
+	defer t.Unlock()
 	ct, ok := contentType[content]
-	t.RUnlock()
 	if !ok {
 		t.logr.Error.Printf("Error, incompatible content type!\n")
+		return
 	}
 	w.Header().Set("Content-Type", ct)
+	return
 }

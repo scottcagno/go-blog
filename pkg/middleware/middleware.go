@@ -1,4 +1,4 @@
-package handlers
+package middleware
 
 import (
 	"github.com/scottcagno/go-blog/pkg/logging"

@@ -2,10 +2,11 @@ package main
 
 import (
 	h "github.com/scottcagno/go-blog/internal/handlers"
+	"github.com/scottcagno/go-blog/internal/user"
 	"github.com/scottcagno/go-blog/pkg/logging"
+	m "github.com/scottcagno/go-blog/pkg/middleware"
 	"github.com/scottcagno/go-blog/pkg/templates"
 	"github.com/scottcagno/go-blog/tools"
-	"github.com/scottcagno/net-tools/pkg/logger"
 	"log"
 	"net/http"
 	"os"
@@ -36,16 +37,34 @@ func init() {
 
 func main() {
 
+	var ep = []string{
+		"/static/",
+		"/favicon.ico",
+		"/",
+		"/endpoints",
+		"/user",
+		"/login",
+		"/logout",
+		"/home",
+		"/error/",
+	}
+
 	mux := http.NewServeMux()
-	mux.Handle("static", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_PATH))))
-	mux.Handle("/favicon.ico", h.CheckGetOrPost(logr, h.FaviconHandler))
-	mux.Handle("/", h.CheckGet(logr, h.IndexHandler(tmpl)))
-	mux.Handle("/login", h.CheckGetOrPost(logr, h.LoginHandler))
-	mux.Handle("/logout", h.CheckGet(logr, h.LogoutHandler))
-	mux.Handle("/home", h.CheckGet(logr, h.HomeHandler))
-	mux.Handle("/error/", h.CheckGetOrPost(logr, h.ErrorHandler))
+
+	mux.Handle("/", m.CheckGet(logr, h.IndexHandler(tmpl)))
+	mux.Handle("/favicon.ico", m.CheckGetOrPost(logr, h.FaviconHandler))
+	mux.Handle("/endpoints", m.CheckGet(logr, h.EndpointHandler(ep, tmpl)))
+
+	u := user.NewUserService(tmpl)
+	mux.Handle("/user", m.CheckGet(logr, u.UserHandler()))
+	mux.Handle("/login", m.CheckGetOrPost(logr, u.LoginHandler()))
+	mux.Handle("/logout", m.CheckGet(logr, u.LogoutHandler()))
+	mux.Handle("/home", m.CheckGet(logr, u.HomeHandler()))
+
+	mux.Handle("/error/", m.CheckGetOrPost(logr, h.ErrorHandler))
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_PATH))))
 
 	tools.HandleSignalInterrupt()
 	log.Printf("Server started, listening on %s\n", LISTENING_PORT)
-	logger.Error.Fatalf("Encountered error: %v\n", http.ListenAndServe(LISTENING_PORT, mux))
+	logr.Error.Fatalf("Encountered error: %v\n", http.ListenAndServe(LISTENING_PORT, mux))
 }
