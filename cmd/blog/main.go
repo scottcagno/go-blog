@@ -1,13 +1,13 @@
 package main
 
 import (
-	h "github.com/scottcagno/go-blog/internal/handlers"
+	"fmt"
+	"github.com/scottcagno/go-blog/internal"
 	"github.com/scottcagno/go-blog/internal/user"
 	"github.com/scottcagno/go-blog/pkg/logging"
 	m "github.com/scottcagno/go-blog/pkg/middleware"
-	"github.com/scottcagno/go-blog/pkg/templates"
+	"github.com/scottcagno/go-blog/pkg/web/templates"
 	"github.com/scottcagno/go-blog/tools"
-	"log"
 	"net/http"
 	"os"
 )
@@ -17,54 +17,62 @@ const (
 	LISTENING_PORT = ":9090"
 )
 
-var (
-	tmpl *templates.TemplateCache
-	logr *logging.Logger
-)
-
 func init() {
-
-	func() {
-		if _, err := os.Stat(STATIC_PATH); os.IsNotExist(err) {
-			if err := os.MkdirAll(STATIC_PATH, 0655); err != nil {
-				log.Fatalf("could not create static file path %q: %v\n", STATIC_PATH, err)
-			}
-		}
-	}()
-	logr = logging.NewLogger(os.Stdout)
-	tmpl = templates.NewTemplateCache("web/templates/*.html", logr)
+	tools.CreateDirIfNotExist(STATIC_PATH)
 }
 
 func main() {
 
-	var ep = []string{
-		"/static/",
-		"/favicon.ico",
-		"/",
-		"/endpoints",
-		"/user",
-		"/login",
-		"/logout",
-		"/home",
-		"/error/",
-	}
+	logTo := os.Stdout
+	logOut := logging.NewStdOutLogger(logTo)
+	logErr := logging.NewStdErrLogger(logTo)
+	tmpl := templates.NewTemplateCache("web/templates/*.html", logErr)
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/", m.CheckGet(logr, h.IndexHandler(tmpl)))
-	mux.Handle("/favicon.ico", m.CheckGetOrPost(logr, h.FaviconHandler))
-	mux.Handle("/endpoints", m.CheckGet(logr, h.EndpointHandler(ep, tmpl)))
+	mux.Handle("/", m.Get(internal.IndexHandler(tmpl)))
+	mux.Handle("/favicon.ico", m.GetOrPost(internal.FaviconHandler))
 
 	u := user.NewUserService(tmpl)
-	mux.Handle("/user", m.CheckGet(logr, u.UserHandler()))
-	mux.Handle("/login", m.CheckGetOrPost(logr, u.LoginHandler()))
-	mux.Handle("/logout", m.CheckGet(logr, u.LogoutHandler()))
-	mux.Handle("/home", m.CheckGet(logr, u.HomeHandler()))
+	mux.Handle("/user", m.Get(u.UserHandler()))
+	mux.Handle("/login", m.GetOrPost(u.LoginHandler()))
+	mux.Handle("/logout", m.Get(u.LogoutHandler()))
+	mux.Handle("/home", m.Get(u.HomeHandler()))
 
-	mux.Handle("/error/", m.CheckGetOrPost(logr, h.ErrorHandler))
+	mux.Handle("/chained", m.ChainedMiddleware(http.HandlerFunc(HandlerThree), HandlerTwo, HandlerOne, HandlerZero))
+
+	mux.Handle("/error/", m.GetOrPost(internal.ErrorHandler))
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_PATH))))
 
 	tools.HandleSignalInterrupt()
-	log.Printf("Server started, listening on %s\n", LISTENING_PORT)
-	logr.Error.Fatalf("Encountered error: %v\n", http.ListenAndServe(LISTENING_PORT, mux))
+	logOut.Printf("Server started, listening on %s\n", LISTENING_PORT)
+	loggingHandler := m.RequestLogger(logOut, logErr)
+	err := http.ListenAndServe(LISTENING_PORT, loggingHandler(mux))
+	logErr.Fatalf("Encountered error: %v\n", err)
+}
+
+func HandlerZero(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("this is handler #0!")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func HandlerOne(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("this is handler #1!")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func HandlerTwo(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("this is handler #2!")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func HandlerThree(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("this is handler #3!")
+	return
 }

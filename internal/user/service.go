@@ -1,6 +1,6 @@
 package user
 
-import "github.com/scottcagno/go-blog/pkg/templates"
+import "github.com/scottcagno/go-blog/pkg/web/templates"
 
 type UserService struct {
 	t *templates.TemplateCache
