@@ -56,6 +56,7 @@ func RequestLogger(stdout, stderr *log.Logger) func(http.Handler) http.Handler {
 	}
 }
 
+/* for reference...
 type StatusRecorder struct {
 	http.ResponseWriter
 	Status int
@@ -76,3 +77,4 @@ func WithLogging(h http.Handler) http.Handler {
 		log.Printf("Handling request for %s from %s, status: %d", r.URL.Path, r.RemoteAddr, recorder.Status)
 	})
 }
+*/
