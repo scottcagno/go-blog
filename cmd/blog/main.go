@@ -31,7 +31,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.Handle("/", m.Get(internal.IndexHandler(tmpl)))
-	mux.Handle("/favicon.ico", m.GetOrPost(internal.FaviconHandler))
+	mux.Handle("/favicon.ico", http.NotFoundHandler()) //m.GetOrPost(internal.FaviconHandler))
 
 	u := user.NewUserService(tmpl)
 	mux.Handle("/user", m.Get(u.UserHandler()))
@@ -39,9 +39,12 @@ func main() {
 	mux.Handle("/logout", m.Get(u.LogoutHandler()))
 	mux.Handle("/home", m.Get(u.HomeHandler()))
 
-	mux.Handle("/chained", m.ChainedMiddleware(http.HandlerFunc(HandlerThree), HandlerTwo, HandlerOne, HandlerZero))
+	chained1 := m.ChainedMiddleware(http.HandlerFunc(HandlerThree), HandlerTwo, HandlerOne, HandlerZero)
 
-	mux.Handle("/error/", m.GetOrPost(internal.ErrorHandler))
+	mux.Handle("/chained1", chained1)
+	mux.Handle("/chained2", HandlerZero(HandlerOne(HandlerTwo(http.HandlerFunc(HandlerThree)))))
+
+	mux.Handle("/error/", http.NotFoundHandler()) //m.GetOrPost(internal.ErrorHandler))
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_PATH))))
 
 	tools.HandleSignalInterrupt()
@@ -53,26 +56,26 @@ func main() {
 
 func HandlerZero(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("this is handler #0!")
+		fmt.Println("In handler ZERO")
 		next.ServeHTTP(w, r)
 	})
 }
 
 func HandlerOne(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("this is handler #1!")
+		fmt.Println("In handler ONE")
 		next.ServeHTTP(w, r)
 	})
 }
 
 func HandlerTwo(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("this is handler #2!")
+		fmt.Println("In handler TWO")
 		next.ServeHTTP(w, r)
 	})
 }
 
 func HandlerThree(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("this is handler #3!")
+	fmt.Println("In handler THREE")
 	return
 }
