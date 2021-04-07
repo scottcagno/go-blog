@@ -5,16 +5,10 @@ import (
 	"log"
 )
 
-const (
-	LdefaultFlags = log.Ldate | log.Ltime | log.Lshortfile | log.Lmsgprefix
-	LstdOutPrefix = "[INFO] "
-	LstdErrPrefix = "[ERROR] "
-)
-
 func NewStdOutLogger(out io.Writer) *log.Logger {
-	return log.New(out, LstdOutPrefix, LdefaultFlags)
+	return log.New(out, "[INFO] ", log.Ldate|log.Ltime|log.Lshortfile|log.Lmsgprefix)
 }
 
 func NewStdErrLogger(out io.Writer) *log.Logger {
-	return log.New(out, LstdErrPrefix, LdefaultFlags)
+	return log.New(out, "[ERROR] ", log.Ldate|log.Ltime|log.Lshortfile|log.Lmsgprefix)
 }

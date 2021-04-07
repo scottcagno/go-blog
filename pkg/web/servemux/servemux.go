@@ -6,6 +6,13 @@ import (
 	"sync"
 )
 
+// TODO: Choose name, I would like a clear API
+// Server
+// ServeMux
+// WebServer
+// HttpServer
+// HTTPServer
+
 type ServeMux struct {
 	routes         []route
 	stdout, stderr *log.Logger
