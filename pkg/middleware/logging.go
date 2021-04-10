@@ -49,22 +49,26 @@ func WithLogging(stdout, stderr *log.Logger) func(http.Handler) http.Handler {
 				},
 			}
 			next.ServeHTTP(&lrw, r)
-			format, values := "# %s - - [%s] \"%s %s %s\" %d %d\n", []interface{}{
-				r.RemoteAddr,
-				time.Now().Format(time.RFC1123Z),
-				r.Method,
-				r.URL.EscapedPath(),
-				r.Proto,
-				lrw.data.status,
-				r.ContentLength,
-			}
 			if 400 <= lrw.data.status && lrw.data.status <= 599 {
-				stderr.Printf(format, values...)
+				LogRequest(stderr, lrw.data.status, r)
 				return
 			}
-			stdout.Printf(format, values...)
+			LogRequest(stdout, lrw.data.status, r)
 			return
 		}
 		return http.HandlerFunc(fn)
 	}
+}
+
+func LogRequest(l *log.Logger, code int, r *http.Request) {
+	format, values := "# %s - - [%s] \"%s %s %s\" %d %d\n", []interface{}{
+		r.RemoteAddr,
+		time.Now().Format(time.RFC1123Z),
+		r.Method,
+		r.URL.EscapedPath(),
+		r.Proto,
+		code,
+		r.ContentLength,
+	}
+	l.Printf(format, values...)
 }
