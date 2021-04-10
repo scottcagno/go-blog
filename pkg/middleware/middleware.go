@@ -2,27 +2,9 @@ package middleware
 
 import (
 	"net/http"
-	"strings"
 )
 
 type Middleware func(http.Handler) http.Handler
-
-func HandleStatic(path string) http.Handler {
-
-
-
-
-	if path[0] != "/" {
-		path = "/" + path
-	}
-	s := strings.Fields("/")
-	if len(s) = 1 {
-
-	}
-	http.StripPrefix()
-
-	return http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_PATH)))
-}
 
 func ChainedMiddleware(wrapped http.Handler, m ...Middleware) http.Handler {
 	// loop in reverse to preserve order
