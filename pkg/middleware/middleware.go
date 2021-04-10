@@ -22,7 +22,6 @@ func NewExampleMiddleware(someThing string) func(http.Handler) http.Handler {
 			// Call the next handler
 			next.ServeHTTP(w, r)
 		}
-
 		return http.HandlerFunc(fn)
 	}
 }
