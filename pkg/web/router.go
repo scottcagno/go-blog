@@ -1,116 +1,154 @@
 package web
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"sync"
 )
+import "html/template"
 
-type Router2 struct {
-	stdout *log.Logger
-	stderr *log.Logger
-	sm     *http.ServeMux
-}
-
-func NewRouter2(stdout, stderr *log.Logger) *Router2 {
-	return &Router2{
-		stdout: stdout,
-		stderr: stderr,
-		sm:     new(http.ServeMux),
-	}
-}
-
-func (rt *Router2) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// do stuff
-	rt.sm.ServeHTTP(w, r)
-}
-
-func (rt *Router2) Forward(pattern string, url string) {
-	rt.Handle(pattern, http.RedirectHandler(url, http.StatusTemporaryRedirect))
-}
-
-func (rt *Router2) Handle(pattern string, handler http.Handler) {
-	rt.sm.Handle(pattern, handler)
-}
-
-func (rt *Router2) HandleStatic(pattern string, path string) {
-	rt.sm.Handle(pattern, http.StripPrefix(pattern, http.FileServer(http.Dir(path))))
-}
-
-type route struct {
+type muxEntry struct {
+	method  string
 	pattern string
 	handler http.Handler
 }
 
-type Router struct {
+func (m muxEntry) String() string {
+	return fmt.Sprintf("%s %s", m.method, m.pattern)
+}
+
+func (s *ServeMux) Len() int {
+	return len(s.entries)
+}
+
+func (s *ServeMux) Less(i, j int) bool {
+	return s.entries[i].pattern < s.entries[j].pattern
+}
+
+func (s *ServeMux) Swap(i, j int) {
+	s.entries[j], s.entries[i] = s.entries[i], s.entries[j]
+}
+
+type ServeMux struct {
+	mu      sync.Mutex
+	bp      sync.Pool
 	stdout  *log.Logger
 	stderr  *log.Logger
-	entries map[string]route
-	routes  []route
-	mu      sync.Mutex
+	entries []muxEntry
+	t       *template.Template
 }
 
-func NewRouter(stdout, stderr *log.Logger) *Router {
-	return &Router{
-		stdout:  stdout,
-		stderr:  stderr,
-		entries: make(map[string]route),
-		routes:  make([]route, 0),
+func NewServeMux() *ServeMux {
+	s := &ServeMux{
+		bp: sync.Pool{
+			New: func() interface{} {
+				return new(bytes.Buffer)
+			},
+		},
+		stdout:  log.New(os.Stdout, "[INFO] ", log.Ldate|log.Ltime|log.Lshortfile|log.Lmsgprefix),
+		stderr:  log.New(os.Stderr, "[ERROR] ", log.Ldate|log.Ltime|log.Lshortfile|log.Lmsgprefix),
+		entries: make([]muxEntry, 0),
+		t:       nil,
 	}
+	s.Get("/favicon.ico", http.NotFoundHandler())
+	return s
 }
 
-func (rt *Router) Handle(pattern string, handler http.Handler) {
-	rt.mu.Lock()
-	defer rt.mu.Unlock()
+func (s *ServeMux) WithLogging(stdout, stderr io.Writer) *ServeMux {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.stdout = log.New(stdout, "[INFO] ", log.Ldate|log.Ltime|log.Lshortfile|log.Lmsgprefix)
+	s.stdout = log.New(stderr, "[ERROR] ", log.Ldate|log.Ltime|log.Lshortfile|log.Lmsgprefix)
+	return s
+}
 
-	if pattern == "" {
-		panic("http: invalid pattern")
-	}
-	if handler == nil {
-		panic("http: nil handler")
-	}
-	if _, exist := rt.entries[pattern]; exist {
-		panic("http: multiple registrations for " + pattern)
-	}
+func (s *ServeMux) WithTemplates(pattern string) *ServeMux {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.t = template.Must(template.New("*").Funcs(fm).ParseGlob(pattern))
+	return s
+}
 
-	if rt.entries == nil {
-		rt.entries = make(map[string]route)
-	}
-	rte := route{
+func (s *ServeMux) newMuxEntry(method string, pattern string, handler http.Handler) {
+	entry := muxEntry{
+		method:  method,
 		pattern: pattern,
 		handler: handler,
 	}
-	rt.entries[pattern] = rte
-	if pattern[len(pattern)-1] == '/' {
-		rt.routes = appendSorted(rt.routes, rte)
-	}
+	s.entries = append(s.entries, entry)
+	sort.Sort(s)
 }
 
-func appendSorted(routes []route, rte route) []route {
-	n := len(routes)
-	i := sort.Search(n, func(i int) bool {
-		return len(routes[i].pattern) < len(rte.pattern)
-	})
-	if i == n {
-		return append(routes, rte)
-	}
-	// we now know that i points at where we want to insert
-	routes = append(routes, route{}) // try to grow the slice in place, any entry works.
-	copy(routes[i+1:], routes[i:])   // Move shorter entries down
-	routes[i] = rte
-	return routes
+func (s *ServeMux) Forward(oldpattern string, newpattern string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.newMuxEntry(http.MethodGet, oldpattern, http.RedirectHandler(newpattern, http.StatusTemporaryRedirect))
 }
 
-// HandleFunc registers the handler function for the given pattern.
-func (rt *Router) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
-	if handler == nil {
-		panic("http: nil handler")
-	}
-	rt.Handle(pattern, http.HandlerFunc(handler))
+func (s *ServeMux) Handle(pattern string, handler http.Handler) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.newMuxEntry(http.MethodGet, pattern, handler)
+	s.newMuxEntry(http.MethodPost, pattern, handler)
 }
 
-func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// do stuff
-	rt.ServeHTTP(w, r)
+func (s *ServeMux) Get(pattern string, handler http.Handler) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.newMuxEntry(http.MethodGet, pattern, handler)
+}
+
+func (s *ServeMux) Post(pattern string, handler http.Handler) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.newMuxEntry(http.MethodPost, pattern, handler)
+}
+
+func (s *ServeMux) Put(pattern string, handler http.Handler) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.newMuxEntry(http.MethodPut, pattern, handler)
+}
+
+func (s *ServeMux) Delete(pattern string, handler http.Handler) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.newMuxEntry(http.MethodDelete, pattern, handler)
+}
+
+func (s *ServeMux) Static(pattern string, path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	staticHandler := http.StripPrefix(pattern, http.FileServer(http.Dir(path)))
+	s.newMuxEntry(http.MethodGet, pattern, staticHandler)
+}
+
+func (s *ServeMux) GetEntries() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var entries []string
+	for _, entry := range s.entries {
+		entries = append(entries, fmt.Sprintln(entry))
+	}
+	return entries
+}
+
+func (s *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h := http.NotFoundHandler()
+	for _, entry := range s.entries {
+		if entry.method != r.Method {
+			continue
+		}
+		if entry.pattern != r.RequestURI {
+			continue
+		}
+		h = entry.handler
+		break
+	}
+	h.ServeHTTP(w, r)
 }

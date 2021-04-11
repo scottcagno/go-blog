@@ -17,22 +17,22 @@ func main() {
 	t := templates.NewTemplateCache("web/templates/*.html", stderr)
 
 	// set up routes
-	mux := web.NewRouter2(stdout, stderr)
+	mux := web.NewServeMux().WithLogging(stdout.Writer(), stderr.Writer())
 
 	// handle not found
-	mux.Handle("/favicon.ico", http.NotFoundHandler())
+	mux.Get("/favicon.ico", http.NotFoundHandler())
 
 	// forward, for testing purposes
 	mux.Forward("/", "/user")
 
 	// handle user model, auto generating html form
-	mux.Handle("/user", HandleIndex(t))
+	mux.Get("/user", HandleIndex(t))
 
 	// handle errors
-	mux.Handle("/error", HandleError())
+	mux.Get("/error", HandleError())
 
 	// handle static content
-	mux.HandleStatic("/static/", "web/static/")
+	mux.Static("/static/", "web/static/")
 
 	tools.HandleSignalInterrupt()
 	stderr.Fatalln(http.ListenAndServe(":8080", mux))
