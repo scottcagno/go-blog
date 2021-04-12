@@ -39,6 +39,10 @@ func main() {
 	mux.Handle("/logout", m.Get(u.LogoutHandler()))
 	mux.Handle("/home", m.Get(u.HomeHandler()))
 
+	mux.Handle("/bar/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "pattern: %q, path: %q\n", "/bar/", r.URL.Path)
+	}))
+
 	mux.Handle("/chained2", HandlerZero(HandlerOne(HandlerTwo(http.HandlerFunc(HandlerThree)))))
 
 	configuredRoute := HandlerZero(http.HandlerFunc(HandlerThree))

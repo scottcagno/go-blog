@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"github.com/scottcagno/go-blog/pkg/logging"
-	"github.com/scottcagno/go-blog/pkg/web"
 	"github.com/scottcagno/go-blog/pkg/web/templates"
 	"github.com/scottcagno/go-blog/tools"
 	"net/http"
@@ -13,26 +13,30 @@ import (
 func main() {
 
 	// set up loggers and template cache
-	stdout, stderr := logging.NewLogger(os.Stdout, os.Stderr)
+	_, stderr := logging.NewLogger(os.Stdout, os.Stderr)
 	t := templates.NewTemplateCache("web/templates/*.html", stderr)
 
 	// set up routes
-	mux := web.NewServeMux().WithLogging(stdout.Writer(), stderr.Writer())
+	mux := http.NewServeMux()
 
 	// handle not found
-	mux.Get("/favicon.ico", http.NotFoundHandler())
+	mux.Handle("/favicon.ico", http.NotFoundHandler())
 
 	// forward, for testing purposes
-	mux.Forward("/", "/user")
+	mux.Handle("/", http.RedirectHandler("/user", http.StatusTemporaryRedirect))
 
 	// handle user model, auto generating html form
-	mux.Get("/user", HandleIndex(t))
+	mux.Handle("/user", HandleIndex(t))
+
+	mux.Handle("/foo/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "pattern: %q, path: %q\n", "/foo/", r.URL.Path)
+	}))
 
 	// handle errors
-	mux.Get("/error", HandleError())
+	mux.Handle("/error", HandleError())
 
 	// handle static content
-	mux.Static("/static/", "web/static/")
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static/"))))
 
 	tools.HandleSignalInterrupt()
 	stderr.Fatalln(http.ListenAndServe(":8080", mux))

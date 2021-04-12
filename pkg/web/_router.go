@@ -97,7 +97,7 @@ func appendSorted(routes []route, rte route) []route {
 	}
 	// we now know that i points at where we want to insert
 	routes = append(routes, route{}) // try to grow the slice in place, any entry works.
-	copy(routes[i+1:], routes[i:])   // Move shorter entries down
+	copy(routes[i+1:], routes[i:])   // Move shorter es down
 	routes[i] = rte
 	return routes
 }

@@ -96,28 +96,3 @@ func (s *WebServer) ListenAndServe(addr string, handler http.Handler) error {
 	}
 	return s.server.ListenAndServe()
 }
-
-type responseData struct {
-	status int
-	size   int
-}
-
-type loggingResponseWriter struct {
-	http.ResponseWriter
-	data *responseData
-}
-
-func (w *loggingResponseWriter) Header() http.Header {
-	return w.ResponseWriter.Header()
-}
-
-func (w *loggingResponseWriter) Write(b []byte) (int, error) {
-	size, err := w.ResponseWriter.Write(b)
-	w.data.size += size
-	return size, err
-}
-
-func (w *loggingResponseWriter) WriteHeader(statusCode int) {
-	w.ResponseWriter.WriteHeader(statusCode)
-	w.data.status = statusCode
-}

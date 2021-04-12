@@ -17,12 +17,42 @@ func main() {
 	mux.Get("/two", getTwo())
 	mux.Get("/two/", getAllTwo())
 	mux.Post("/foo", http.NotFoundHandler())
-	mux.Get("/endpoints", showEndpoints(mux.GetEntries()))
+	mux.Get("/test", testController())
+	mux.Get("/index/controller", indexController())
+	mux.Get("/testing", getTesting())
+
+	mux.Get("/endpoints", getEndpoints(mux.GetEntries()))
+
 	mux.Static("/static/", "web/static/")
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func getTesting() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		name := r.URL.Query().Get("view")
+		fmt.Fprintf(w, "path: %q, name: %q\n", r.URL.Path, name)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func indexController() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		//data := r.URL.Query().Get("data")
+		data := "This is my index controller data, for now"
+		web.Render(w, r, "index.html", data)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func testController() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		s := "testController()"
+		fmt.Fprintf(w, "%s hit!\n%s %s\n", s, r.Method, r.RequestURI)
+	}
+	return http.HandlerFunc(fn)
 }
 
 func getOne() http.Handler {
@@ -65,11 +95,11 @@ func getAllTwo() http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func showEndpoints(entries []string) http.Handler {
+func getEndpoints(entries []string) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		var sb strings.Builder
-		sb.WriteString("<h1>Endpoints</h1>")
+		sb.WriteString("<h1>Endpoints</h1><hr>")
 		for i := 0; i < len(entries); i++ {
 			sb.WriteString(fmt.Sprintf("%s\t", entries[i]))
 			if strings.HasPrefix(entries[i], http.MethodGet) {
